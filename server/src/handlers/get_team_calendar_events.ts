@@ -1,9 +1,34 @@
+import { db } from '../db';
+import { calendarEventsTable } from '../db/schema';
 import { type GetTeamCalendarEventsInput, type CalendarEvent } from '../schema';
+import { eq, gte, lte, and, desc, type SQL } from 'drizzle-orm';
 
-export async function getTeamCalendarEvents(input: GetTeamCalendarEventsInput): Promise<CalendarEvent[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching calendar events for a specific team.
-    // Should support optional date range filtering for efficient calendar views.
-    // Only team members should be able to access these events.
-    return Promise.resolve([]);
-}
+export const getTeamCalendarEvents = async (input: GetTeamCalendarEventsInput): Promise<CalendarEvent[]> => {
+  try {
+    // Build conditions array
+    const conditions: SQL<unknown>[] = [
+      eq(calendarEventsTable.team_id, input.team_id)
+    ];
+
+    // Add optional date range filtering
+    if (input.start_date) {
+      conditions.push(gte(calendarEventsTable.start_time, input.start_date));
+    }
+
+    if (input.end_date) {
+      conditions.push(lte(calendarEventsTable.end_time, input.end_date));
+    }
+
+    // Build and execute query in one go
+    const results = await db.select()
+      .from(calendarEventsTable)
+      .where(and(...conditions))
+      .orderBy(desc(calendarEventsTable.start_time))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch team calendar events:', error);
+    throw error;
+  }
+};

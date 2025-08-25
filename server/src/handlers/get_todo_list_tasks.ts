@@ -1,8 +1,20 @@
+import { db } from '../db';
+import { tasksTable } from '../db/schema';
 import { type GetTodoListTasksInput, type Task } from '../schema';
+import { eq, desc } from 'drizzle-orm';
 
-export async function getTodoListTasks(input: GetTodoListTasksInput): Promise<Task[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all tasks belonging to a specific to-do list.
-    // Should include task details, assignments, priorities, and status.
-    return Promise.resolve([]);
-}
+export const getTodoListTasks = async (input: GetTodoListTasksInput): Promise<Task[]> => {
+  try {
+    // Query tasks by todo_list_id, ordered by created_at desc
+    const results = await db.select()
+      .from(tasksTable)
+      .where(eq(tasksTable.todo_list_id, input.todo_list_id))
+      .orderBy(desc(tasksTable.created_at))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch todo list tasks:', error);
+    throw error;
+  }
+};

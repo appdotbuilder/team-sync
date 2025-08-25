@@ -1,16 +1,24 @@
+import { db } from '../db';
+import { todoListsTable } from '../db/schema';
 import { type CreateTodoListInput, type TodoList } from '../schema';
 
-export async function createTodoList(input: CreateTodoListInput, userId: number): Promise<TodoList> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new shared to-do list within a team.
-    // All team members will have equal permissions to manage tasks in this list.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+export const createTodoList = async (input: CreateTodoListInput, userId: number): Promise<TodoList> => {
+  try {
+    // Insert todo list record
+    const result = await db.insert(todoListsTable)
+      .values({
         team_id: input.team_id,
         name: input.name,
         description: input.description || null,
-        created_by: userId,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as TodoList);
-}
+        created_by: userId
+      })
+      .returning()
+      .execute();
+
+    const todoList = result[0];
+    return todoList;
+  } catch (error) {
+    console.error('Todo list creation failed:', error);
+    throw error;
+  }
+};

@@ -1,8 +1,18 @@
+import { db } from '../db';
+import { shoppingItemsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type GetShoppingListItemsInput, type ShoppingItem } from '../schema';
 
-export async function getShoppingListItems(input: GetShoppingListItemsInput): Promise<ShoppingItem[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all items belonging to a specific shopping list.
-    // Should include item details, quantities, comments, and purchase status.
-    return Promise.resolve([]);
-}
+export const getShoppingListItems = async (input: GetShoppingListItemsInput): Promise<ShoppingItem[]> => {
+  try {
+    const results = await db.select()
+      .from(shoppingItemsTable)
+      .where(eq(shoppingItemsTable.shopping_list_id, input.shopping_list_id))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch shopping list items:', error);
+    throw error;
+  }
+};

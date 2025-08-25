@@ -1,20 +1,35 @@
+import { db } from '../db';
+import { shoppingItemsTable, shoppingListsTable } from '../db/schema';
 import { type CreateShoppingItemInput, type ShoppingItem } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export async function createShoppingItem(input: CreateShoppingItemInput, userId: number): Promise<ShoppingItem> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new item in a shared shopping list.
-    // Items have name, quantity, and optional comments. Real-time updates will be required.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Verify the shopping list exists before creating an item
+    const shoppingList = await db.select()
+      .from(shoppingListsTable)
+      .where(eq(shoppingListsTable.id, input.shopping_list_id))
+      .execute();
+
+    if (shoppingList.length === 0) {
+      throw new Error(`Shopping list with id ${input.shopping_list_id} not found`);
+    }
+
+    // Insert the shopping item record
+    const result = await db.insert(shoppingItemsTable)
+      .values({
         shopping_list_id: input.shopping_list_id,
         name: input.name,
-        quantity: input.quantity || 1,
+        quantity: input.quantity, // Zod default of 1 is already applied
         comment: input.comment || null,
-        is_purchased: false,
-        purchased_by: null,
-        purchased_at: null,
-        created_by: userId,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as ShoppingItem);
+        created_by: userId
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Shopping item creation failed:', error);
+    throw error;
+  }
 }
